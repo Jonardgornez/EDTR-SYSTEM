@@ -1,3 +1,4 @@
+// src/App.jsx
 import { useMemo, useState } from "react";
 import UploadBox from "./components/UploadBox";
 import ProgressModal from "./components/ProgressModal";
@@ -12,12 +13,13 @@ export default function App() {
   const [empName, setEmpName] = useState("_____________________");
   const [period, setPeriod] = useState("For the month of _____________");
 
+  // null = no file uploaded yet
   const [logsByDay, setLogsByDay] = useState(null);
 
+  // shared edits for all copies
   const [edits, setEdits] = useState({});
 
   const dtrCopies = useMemo(() => [1, 2, 3, 4], []);
-
   const hasData = !!logsByDay;
 
   const handleFile = async (file) => {
@@ -28,7 +30,6 @@ export default function App() {
 
     try {
       const result = await parseDTRPdf(file, (p) => setPercent(p));
-
       setEmpName(result.empName);
       setPeriod(result.period);
       setLogsByDay(result.logsByDay);
@@ -49,8 +50,16 @@ export default function App() {
     }));
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (!hasData) return;
+
+    // If running inside Electron with preload exposed API:
+    if (window.EDTR?.openInBrowser) {
+      await window.EDTR.openInBrowser(window.location.href);
+      return;
+    }
+
+    // Fallback when running in normal browser (vite dev / web):
     window.print();
   };
 
@@ -58,6 +67,7 @@ export default function App() {
     <div>
       <UploadBox onFile={handleFile} onPrint={handlePrint} canPrint={hasData} />
 
+      {/* Show DTR only after upload */}
       {hasData && (
         <>
           <div className="page" id="formsContainer">
