@@ -11,13 +11,16 @@ export default function App() {
 
   const [empName, setEmpName] = useState("_____________________");
   const [period, setPeriod] = useState("For the month of _____________");
-  const [logsByDay, setLogsByDay] = useState({});
-  const [edits, setEdits] = useState({}); // shared edits across all copies
+  const [logsByDay, setLogsByDay] = useState(null); // ✅ start as null
+  const [edits, setEdits] = useState({});
 
   const dtrCopies = useMemo(() => [1, 2, 3, 4], []);
 
+  const hasData = !!logsByDay; // ✅ true only after upload + parse
+
   const handleFile = async (file) => {
     if (!file) return;
+
     setLoading(true);
     setPercent(0);
 
@@ -25,8 +28,8 @@ export default function App() {
       const result = await parseDTRPdf(file, (p) => setPercent(p));
       setEmpName(result.empName);
       setPeriod(result.period);
-      setLogsByDay(result.logsByDay);
-      setEdits({}); // reset edits on new upload
+      setLogsByDay(result.logsByDay); // ✅ now hasData becomes true
+      setEdits({});
     } finally {
       setLoading(false);
     }
@@ -43,24 +46,29 @@ export default function App() {
     <div>
       <UploadBox onFile={handleFile} onPrint={onPrint} />
 
-      <div className="page" id="formsContainer">
-        {dtrCopies.map((copyId) => (
-          <DTRForm
-            key={copyId}
-            empName={empName}
-            period={period}
-            logsByDay={logsByDay}
-            edits={edits}
-            onEdit={onEdit}
-          />
-        ))}
-      </div>
+      {/* ✅ Only show forms after a PDF is uploaded */}
+      {hasData && (
+        <>
+          <div className="page" id="formsContainer">
+            {dtrCopies.map((copyId) => (
+              <DTRForm
+                key={copyId}
+                empName={empName}
+                period={period}
+                logsByDay={logsByDay}
+                edits={edits}
+                onEdit={onEdit}
+              />
+            ))}
+          </div>
 
-      <Instructions copies={4} />
+          <Instructions copies={4} />
 
-      <div className="powered">
-        Developed By: <b>TeradaPasagad</b>
-      </div>
+          <div className="powered">
+            Developed By: <b>TeradaPasagad</b>
+          </div>
+        </>
+      )}
 
       <ProgressModal show={loading} percent={percent} />
     </div>
