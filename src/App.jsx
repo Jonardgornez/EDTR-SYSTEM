@@ -53,14 +53,12 @@ export default function App() {
   const handlePrint = async () => {
     if (!hasData) return;
 
-    // If running inside Electron with preload exposed API:
-    if (window.EDTR?.openInBrowser) {
-      await window.EDTR.openInBrowser(window.location.href);
+    if (!window.EDTR?.openChrome) {
+      alert("EDTR bridge missing. Preload not loaded.");
       return;
     }
 
-    // Fallback when running in normal browser (vite dev / web):
-    window.print();
+    await window.EDTR.openChrome(window.location.href);
   };
 
   return (
