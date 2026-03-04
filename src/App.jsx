@@ -1,3 +1,4 @@
+// src/App.jsx
 import { useMemo, useState } from "react";
 import UploadBox from "./components/UploadBox";
 import ProgressModal from "./components/ProgressModal";
@@ -11,12 +12,15 @@ export default function App() {
 
   const [empName, setEmpName] = useState("_____________________");
   const [period, setPeriod] = useState("For the month of _____________");
-  const [logsByDay, setLogsByDay] = useState(null); // ✅ start as null
+
+  // ✅ null = no upload yet (so nothing shows)
+  const [logsByDay, setLogsByDay] = useState(null);
+
+  // Shared edits across all copies
   const [edits, setEdits] = useState({});
 
   const dtrCopies = useMemo(() => [1, 2, 3, 4], []);
-
-  const hasData = !!logsByDay; // ✅ true only after upload + parse
+  const hasData = !!logsByDay;
 
   const handleFile = async (file) => {
     if (!file) return;
@@ -28,8 +32,12 @@ export default function App() {
       const result = await parseDTRPdf(file, (p) => setPercent(p));
       setEmpName(result.empName);
       setPeriod(result.period);
-      setLogsByDay(result.logsByDay); // ✅ now hasData becomes true
+      setLogsByDay(result.logsByDay);
       setEdits({});
+    } catch (err) {
+      console.error(err);
+      // reset if something fails
+      setLogsByDay(null);
     } finally {
       setLoading(false);
     }
@@ -40,13 +48,16 @@ export default function App() {
     setEdits((prev) => ({ ...prev, [key]: value }));
   };
 
-  const onPrint = () => window.print();
+  const onPrint = () => {
+    if (!hasData) return; // ✅ do nothing if no upload
+    window.print();
+  };
 
   return (
     <div>
-      <UploadBox onFile={handleFile} onPrint={onPrint} />
+      <UploadBox onFile={handleFile} onPrint={onPrint} canPrint={hasData} />
 
-      {/* ✅ Only show forms after a PDF is uploaded */}
+      {/* ✅ Only show forms after PDF is uploaded and parsed */}
       {hasData && (
         <>
           <div className="page" id="formsContainer">
