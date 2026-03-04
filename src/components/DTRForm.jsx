@@ -5,7 +5,7 @@ const days = Array.from({ length: 31 }, (_, i) => i + 1);
 export default function DTRForm({ empName, period, logsByDay, edits, onEdit }) {
   const getCellValue = (day, field) => {
     const key = `${day}-${field}`;
-    // if user edited, use edited value, else use pdf value stripped
+
     if (edits[key] != null) return edits[key];
     return stripAMPM(logsByDay?.[day]?.[field] || "");
   };
