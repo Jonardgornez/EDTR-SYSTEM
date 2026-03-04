@@ -1,4 +1,3 @@
-// src/App.jsx
 import { useMemo, useState } from "react";
 import UploadBox from "./components/UploadBox";
 import ProgressModal from "./components/ProgressModal";
@@ -13,10 +12,7 @@ export default function App() {
   const [empName, setEmpName] = useState("_____________________");
   const [period, setPeriod] = useState("For the month of _____________");
 
-  // null = no file uploaded yet
   const [logsByDay, setLogsByDay] = useState(null);
-
-  // shared edits for all copies
   const [edits, setEdits] = useState({});
 
   const dtrCopies = useMemo(() => [1, 2, 3, 4], []);
@@ -50,22 +46,64 @@ export default function App() {
     }));
   };
 
+  // ✅ Best: build HTML + open in Chrome + auto print preview
   const handlePrint = async () => {
     if (!hasData) return;
 
-    if (!window.EDTR?.openChrome) {
-      alert("EDTR bridge missing. Preload not loaded.");
+    const formsHtml =
+      document.getElementById("formsContainer")?.outerHTML || "";
+    const instructionsHtml =
+      document.querySelector(".instructions")?.outerHTML || "";
+
+    // Collect CSS rules from loaded stylesheets (your local CSS is OK)
+    const css = Array.from(document.styleSheets)
+      .map((s) => {
+        try {
+          return Array.from(s.cssRules)
+            .map((r) => r.cssText)
+            .join("\n");
+        } catch {
+          return "";
+        }
+      })
+      .join("\n");
+
+    const htmlDoc = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DTR Print</title>
+  <style>${css}</style>
+</head>
+<body>
+  ${formsHtml}
+  ${instructionsHtml}
+
+  <script>
+    window.onload = () => setTimeout(() => window.print(), 300);
+  </script>
+</body>
+</html>`;
+
+    // Electron → Chrome
+    if (window.EDTR?.printInChrome) {
+      await window.EDTR.printInChrome(htmlDoc);
       return;
     }
 
-    await window.EDTR.openChrome(window.location.href);
+    // Web fallback: open a new tab and print
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.open();
+    w.document.write(htmlDoc);
+    w.document.close();
   };
 
   return (
     <div>
       <UploadBox onFile={handleFile} onPrint={handlePrint} canPrint={hasData} />
 
-      {/* Show DTR only after upload */}
       {hasData && (
         <>
           <div className="page" id="formsContainer">
