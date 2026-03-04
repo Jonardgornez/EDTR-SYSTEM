@@ -17,7 +17,7 @@ export default function UploadBox({ onFile, onPrint, canPrint }) {
       <button
         className="btn btn-primary"
         onClick={onPrint}
-        disabled={!canPrint} // ✅ disable if no file
+        disabled={!canPrint}
       >
         🖨 Print All
       </button>

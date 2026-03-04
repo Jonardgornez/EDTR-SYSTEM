@@ -1,4 +1,3 @@
-// src/App.jsx
 import { useMemo, useState } from "react";
 import UploadBox from "./components/UploadBox";
 import ProgressModal from "./components/ProgressModal";
@@ -13,13 +12,12 @@ export default function App() {
   const [empName, setEmpName] = useState("_____________________");
   const [period, setPeriod] = useState("For the month of _____________");
 
-  // ✅ null = no upload yet (so nothing shows)
   const [logsByDay, setLogsByDay] = useState(null);
 
-  // Shared edits across all copies
   const [edits, setEdits] = useState({});
 
   const dtrCopies = useMemo(() => [1, 2, 3, 4], []);
+
   const hasData = !!logsByDay;
 
   const handleFile = async (file) => {
@@ -30,34 +28,36 @@ export default function App() {
 
     try {
       const result = await parseDTRPdf(file, (p) => setPercent(p));
+
       setEmpName(result.empName);
       setPeriod(result.period);
       setLogsByDay(result.logsByDay);
       setEdits({});
     } catch (err) {
-      console.error(err);
-      // reset if something fails
+      console.error("PDF parsing error:", err);
       setLogsByDay(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const onEdit = (day, field, value) => {
+  const handleEdit = (day, field, value) => {
     const key = `${day}-${field}`;
-    setEdits((prev) => ({ ...prev, [key]: value }));
+    setEdits((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
   };
 
-  const onPrint = () => {
-    if (!hasData) return; // ✅ do nothing if no upload
+  const handlePrint = () => {
+    if (!hasData) return;
     window.print();
   };
 
   return (
     <div>
-      <UploadBox onFile={handleFile} onPrint={onPrint} canPrint={hasData} />
+      <UploadBox onFile={handleFile} onPrint={handlePrint} canPrint={hasData} />
 
-      {/* ✅ Only show forms after PDF is uploaded and parsed */}
       {hasData && (
         <>
           <div className="page" id="formsContainer">
@@ -68,12 +68,12 @@ export default function App() {
                 period={period}
                 logsByDay={logsByDay}
                 edits={edits}
-                onEdit={onEdit}
+                onEdit={handleEdit}
               />
             ))}
           </div>
 
-          <Instructions copies={4} />
+          <Instructions />
 
           <div className="powered">
             Developed By: <b>TeradaPasagad</b>
